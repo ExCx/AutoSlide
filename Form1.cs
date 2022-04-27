@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AutoSlide
@@ -16,6 +12,8 @@ namespace AutoSlide
     {
         List<string> filePaths;
         List<int> randomSeq;
+        string currFilePath;
+        int currIndex = 0;
 
         public Form1()
         {
@@ -27,15 +25,46 @@ namespace AutoSlide
             filePaths = Directory.GetFiles(".").Where(file => file.EndsWith(".jpg") || file.EndsWith(".jpeg") || file.EndsWith(".png")).ToList();
             randomSeq = Enumerable.Range(0, filePaths.Count).ToList();
             randomSeq.Shuffle();
+            AdvanceToNextImage();
         }
 
         private void pictureBox1_MouseClick(object sender, MouseEventArgs e)
         {
-            if (randomSeq.Count == 0)
+            if (e.Button == MouseButtons.Left)
+                AdvanceToNextImage();
+            else if (e.Button == MouseButtons.Right) 
+            {
+                currIndex -= 2;
+                if (currIndex < 0) 
+                    currIndex = 0;
+                AdvanceToNextImage();
+            }
+        }
+
+        private void AdvanceToNextImage() 
+        {
+            if (currIndex == filePaths.Count)
+            {
                 Application.Exit();
-            label1.Text = randomSeq[0].ToString();
-            pictureBox1.Image = new Bitmap(filePaths[randomSeq[0]]);
-            randomSeq.RemoveAt(0);
+                return;
+            }
+            currFilePath = filePaths[randomSeq[currIndex++]];
+            label1.Text = Path.GetFileName(currFilePath);
+            pictureBox1.Image = new Bitmap(currFilePath);
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Delete)
+            {
+                var pathToDelete = currFilePath;
+                AdvanceToNextImage();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                File.Delete(pathToDelete);
+            }
+            else if (e.KeyCode == Keys.Escape)
+                Application.Exit();
         }
     }
 }
